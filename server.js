@@ -18,6 +18,10 @@ const checkPin = (pin, stored) => {
 const rndPin = (len = 4) => String(crypto.randomInt(0, 10 ** len)).padStart(len, '0');
 async function uniquePin() { let p; do { p = rndPin(4); } while (await db.get('SELECT 1 FROM players WHERE pin=?', p)); return p; }
 
+// Normalise PIN input: Unicode decimal digits (full-width, Arabic-Indic, etc.) -> ASCII, then drop non-digits.
+const normPin = v => String(v ?? '').normalize('NFKC').replace(/\p{Nd}/gu, d => {
+  const c = d.codePointAt(0); for (let z = c; z >= c - 9; z--) if (/\p{Nd}/u.test(String.fromCodePoint(z)) && !/\p{Nd}/u.test(String.fromCodePoint(z - 1))) return String(c - z);
+  return d; }).replace(/[^0-9]/g, '');
 // --- startup: migrations, manager PIN (from MANAGER_PIN env), invite code, seed
 async function init() {
   await db.migrate();
@@ -119,7 +123,7 @@ app.post('/api/login', async (req, res) => {
   const ip = req.headers['cf-connecting-ip'] || req.ip; const t = tries.get(ip) || { n: 0, at: Date.now() };
   if (Date.now() - t.at > 10 * 60e3) { t.n = 0; t.at = Date.now(); }
   if (t.n >= 10) return res.status(429).json({ error: 'too_many' });
-  const pin = String(req.body.pin || '').trim();
+  const pin = normPin(req.body?.pin);
   if (pin && checkPin(pin, await getS('manager_pin_hash'))) return res.json({ token: await newSession('manager'), role: 'manager' });
   const p = pin && await db.get('SELECT * FROM players WHERE pin=?', pin);
   if (p) return res.json({ token: await newSession('player', p.id), role: 'player', playerId: p.id });
@@ -286,7 +290,7 @@ app.get('/api/ranking', auth, async (req, res) => {
   res.json(list);
 });
 
-app.use(express.static(path.join(__dirname, 'public'), { setHeaders: (res, f) => { if (f.endsWith('sw.js') || f.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
+app.use(express.static(path.join(__dirname, 'public'), { setHeaders: (res, f) => { if (f.endsWith('sw.js') || f.endsWith('.html') || f.endsWith('app.js')) res.setHeader('Cache-Control', 'no-cache'); } }));
 app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.use((err, req, res, next) => { console.error(err); res.status(500).json({ error: 'server' }); });
 

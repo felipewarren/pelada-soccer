@@ -34,13 +34,15 @@ function viewLogin() {
   $('#nav').classList.add('hide');
   $('#app').innerHTML = `<div class="login"><div class="box"><div style="position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px">${langSel()}</div>
     <h1 style="font-size:30px">${GROUP.name}</h1><div class="m b" style="margin:6px 0 20px">${t('indoor')} • 8x8 • ${GROUP.venue}</div>
-    <label>${t('pin')}</label><input id="pin" inputmode="numeric" type="password" autocomplete="current-password" placeholder="••••">
+    <label>${t('pin')}</label><div style="position:relative"><input id="pin" name="pelada-pin" type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="16" placeholder="••••" style="-webkit-text-security:disc;padding-right:48px"><button type="button" id="pineye" aria-label="show/hide PIN" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;font-size:20px;color:inherit;cursor:pointer">👁</button></div>
     <button class="pill" style="width:100%;margin:16px 0 8px" onclick="doLogin()">${t('login')}</button>
     <button class="pill ghost" style="width:100%;margin:0" onclick="viewJoin()">${t('join_with_invite')}</button>
     <p class="m center mt">${t('login_help')}</p></div></div>`;
   $('#pin').onkeydown = e => e.key === 'Enter' && doLogin();
+  $('#pineye').onclick = () => { const i = $('#pin'), s = i.style.webkitTextSecurity === 'none'; i.style.webkitTextSecurity = s ? 'disc' : 'none'; $('#pineye').textContent = s ? '👁' : '🙈'; };
 }
-async function doLogin() { try { const r = await api('/login', { method: 'POST', body: { pin: $('#pin').value } }); saveSession(r); } catch (e) {} }
+const normPin = v => String(v || '').normalize('NFKC').replace(/\p{Nd}/gu, d => { const c = d.codePointAt(0); for (const z of [0x30,0x660,0x6F0,0x7C0,0x966,0x9E6,0xFF10]) if (c >= z && c < z + 10) return String(c - z); return d; }).replace(/[^0-9]/g, '');
+async function doLogin() { try { const r = await api('/login', { method: 'POST', body: { pin: normPin($('#pin').value) } }); saveSession(r); } catch (e) {} }
 function saveSession(r) { S.token = r.token; S.role = r.role; S.pid = r.playerId || null; localStorage.token = r.token; localStorage.role = r.role; if (S.pid) localStorage.pid = S.pid; location.hash = '#/game'; route(); }
 function viewJoin() {
   const code = new URLSearchParams(location.search).get('invite') || '';
