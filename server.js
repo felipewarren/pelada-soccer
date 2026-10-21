@@ -289,5 +289,8 @@ app.use(express.static(path.join(__dirname, 'public'), { setHeaders: (res, f) =>
 app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.use((err, req, res, next) => { console.error(err); res.status(500).json({ error: 'server' }); });
 
-init().then(() => app.listen(PORT, () => console.log('Pelada on :' + PORT)))
-  .catch(e => { console.error('startup failed:', e.message); process.exit(1); });
+module.exports = { app, init };
+if (require.main === module) {
+  init().then(() => app.listen(PORT, () => console.log('Pelada on :' + PORT)))
+    .catch(e => { console.error('startup failed:', e.message); process.exit(1); });
+}

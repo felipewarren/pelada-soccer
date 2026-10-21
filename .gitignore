@@ -6,3 +6,4 @@ MANAGER_PIN.txt
 screens/
 tunnel/
 *.log
+dist-neon/
