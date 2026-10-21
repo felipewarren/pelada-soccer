@@ -11,6 +11,8 @@ async function handler(request) {
   const port = await start();
   const u = new URL(request.url);
   const headers = new Headers(request.headers);
+  // Neon's edge (AWS ALB) overwrites X-Forwarded-For with the real client IP; pass it to Express.
+  headers.set('x-forwarded-for', (request.headers.get('x-forwarded-for') || '').split(',').pop().trim() || '0.0.0.0');
   headers.set('x-forwarded-host', u.host); headers.set('x-forwarded-proto', 'https');
   const hasBody = !['GET', 'HEAD'].includes(request.method);
   const res = await fetch(`http://127.0.0.1:${port}${u.pathname}${u.search}`, {

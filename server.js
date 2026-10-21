@@ -99,7 +99,8 @@ async function achievements(pid) {
 
 // --- app
 const app = express();
-app.set('trust proxy', 1);
+// Only the in-process Neon proxy (loopback) is trusted to set X-Forwarded-For, so req.ip is the real client IP.
+app.set('trust proxy', 'loopback');
 app.get('/healthz', async (req, res) => { try { await db.get('SELECT 1'); res.json({ ok: true }); } catch (e) { res.status(503).json({ ok: false }); } });
 app.use(express.json({ limit: '2mb' }));
 app.use((req, res, next) => { req.body ||= {}; next(); });
