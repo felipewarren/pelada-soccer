@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: pelada-soccer
+    runtime: node
+    plan: free
+    region: virginia
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DATABASE_URL   # Neon pooled connection string
+        sync: false
+      - key: MANAGER_PIN    # used only on first boot to set the hashed manager PIN
+        sync: false
