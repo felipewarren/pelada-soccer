@@ -38,7 +38,7 @@ function viewLogin() {
     <button class="pill" style="width:100%;margin:16px 0 8px" onclick="doLogin()">${t('login')}</button>
     <button class="pill ghost" style="width:100%;margin:0" onclick="viewJoin()">${t('join_with_invite')}</button>
     <p class="m center mt">${t('login_help')}</p></div></div>`;
-  $('#pin').onkeydown = e => e.key === 'Enter' && doLogin();
+  $('#pin').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
   $('#pineye').onclick = () => { const i = $('#pin'), s = i.style.webkitTextSecurity === 'none'; i.style.webkitTextSecurity = s ? 'disc' : 'none'; $('#pineye').textContent = s ? '👁' : '🙈'; };
 }
 const normPin = v => String(v || '').normalize('NFKC').replace(/\p{Nd}/gu, d => { const c = d.codePointAt(0); for (const z of [0x30,0x660,0x6F0,0x7C0,0x966,0x9E6,0xFF10]) if (c >= z && c < z + 10) return String(c - z); return d; }).replace(/[^0-9]/g, '');
